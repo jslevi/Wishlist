@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Wishlist</title>
+<style>
+  :root { --bg:#0b0c10; --bg2:#12151d; --card:#111319; --border:#212736; --text:#e6e6e6; --muted:#a8b0bf; --accent:#6ee7ff; --ok:#34d399; }
+  :root[data-theme="light"]{ --bg:#f6f7fb; --bg2:#eaeef8; --card:#ffffff; --border:#e7e9f1; --text:#13151a; --muted:#4a5568; --accent:#2563eb; --ok:#16a34a; }
+  :root[data-theme="nord"]{ --bg:#2e3440; --bg2:#3b4252; --card:#2e3440; --border:#434c5e; --text:#eceff4; --muted:#d8dee9; --accent:#88c0d0; --ok:#a3be8c; }
+  :root[data-theme="nier"]{ --bg:#4b413d; --bg2:#594e4a; --card:#594e4a; --border:#827a77; --text:#f4f0e6; --muted:#c3bda8; --accent:#b0ab98; --ok:#b0ab98; }
+  :root[data-theme="rose"]{ --bg:#2c0a14; --bg2:#3d0f1e; --card:#451120; --border:#5b1a2e; --text:#ffdee3; --muted:#f5a3b3; --accent:#ff6b81; --ok:#ffb3c1; }
+  :root[data-theme="matrix"]{ --bg:#000; --bg2:#001a00; --card:#002000; --border:#004000; --text:#00ff9d; --muted:#00d178; --accent:#00ff3c; --ok:#00ff9d; }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:linear-gradient(120deg,var(--bg) 0%,var(--bg2) 60%,var(--bg) 100%);color:var(--text);font-family:system-ui,Roboto,Inter,sans-serif}
+  .container{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:24px}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:12px;flex-wrap:wrap}
+  h1{font-size:28px;margin:0}
+  .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  input,select,button{border:1px solid var(--border);background:var(--card);color:var(--text);padding:10px 12px;border-radius:12px}
+  button{cursor:pointer;transition:transform .1s ease}
+  button:hover{transform:translateY(-1px)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+  .card-body{padding:14px}
+  .title{font-weight:600;margin-bottom:6px}
+  .meta{font-size:12px;color:var(--muted);display:flex;gap:10px}
+  .actions{display:flex;gap:8px;margin-top:12px}
+  .link{flex:1;text-align:center;text-decoration:none;border:1px solid var(--border);background:var(--bg2);color:var(--accent);padding:10px 12px;border-radius:10px}
+  .buy{background:#112019;color:var(--ok);border-color:#21483e}
+  .note{font-size:12px;color:var(--muted);margin-top:6px;opacity:0.9;font-style:italic}
+  .radio-wrap{display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);background:var(--card);border-radius:12px}
+  .radio-wrap label{font-size:12px;color:var(--muted)}
+  .radio-wrap input[type="range"]{width:120px}
+  /* FX layers */
+  canvas#stars,canvas#lineFX,canvas#fx{position:fixed;inset:0;pointer-events:none}
+  canvas#stars{z-index:0}
+  canvas#lineFX{z-index:49}
+  canvas#fx{z-index:50}
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+<canvas id="lineFX"></canvas>
+<canvas id="fx"></canvas>
+
+<div class="container">
+  <header>
+    <h1>📝 Jackson's Wishlist</h1>
+    <div class="controls">
+      <input id="q" type="text" placeholder="Search…" />
+      <select id="sort">
+        <option value="rank">Sort: Smart</option>
+        <option value="name">Sort: Name</option>
+        <option value="price-asc">Price ↑</option>
+        <option value="price-desc">Price ↓</option>
+      </select>
+      <select id="cat"><option value="">All categories</option></select>
+      <select id="themeSel" title="Theme">
+        <option value="default">Default</option>
+        <option value="light">Light</option>
+        <option value="nord">Nord</option>
+        <option value="nier">Nier</option>
+        <option value="rose">Rose</option>
+        <option value="matrix">Matrix</option>
+      </select>
+      <button id="print">Print</button>
+
+      <!-- Lainchan radio controls -->
+      <div class="radio-wrap">
+        <button id="radioToggle" title="Play/Pause Lainchan Radio">▶︎ Play</button>
+        <label for="radioVol">Vol</label>
+        <input id="radioVol" type="range" min="0" max="1" step="0.01" value="0.35" />
+      </div>
+      <audio id="lainRadio" preload="none" crossorigin="anonymous"
+             src="https://radio.lainchan.org/listen/lainchan_radio_main/radio.mp3"></audio>
+    </div>
+  </header>
+
+  <div id="list" class="grid"></div>
+  <div id="empty" style="display:none;opacity:.7;text-align:center;padding:40px;border:1px dashed var(--border);border-radius:16px">No matches</div>
+</div>
+
+<script type="text/markdown" id="wishlist-md">
+# Technology
+- [ ] KVM Switch (https://www.aliexpress.com/item/1005006301326389.html) - $23
+- [ ] Google Pixel (https://www.ebay.com.au/itm/166783540543) - $580 - For installing GrapheneOS; see supported devices
+- [ ] 3DS Face Plate (https://www.aliexpress.com/item/1005008599513836.html) - $15
+- [ ] Quest 2 Controller Rechargable Battery (https://www.aliexpress.com/item/1005007669936975.html?spm=a2g0o.productlist.main.2.44c64f8dbKMIky&algo_pvid=5ade40ae-4fc6-4cb3-b7cc-5c2a261a6710&algo_exp_id=5ade40ae-4fc6-4cb3-b7cc-5c2a261a6710-1&pdp_ext_f=%7B%22order%22%3A%224%22%2C%22eval%22%3A%221%22%2C%22fromPage%22%3A%22search%22%7D&pdp_npi=6%40dis%21AUD%2143.84%2124.99%21%21%2128.15%2116.05%21%402101ef5e17627445119944673e3e98%2112000041729935461%21sea%21AU%212946296420%21X%211%210%21n_tag%3A-29919%3Bd%3A6a443673%3Bm03_new_user%3A-29895&curPageLogUid=D8mtVf5GegAU&utparam-url=scene%3Asearch%7Cquery_from%3A%7Cx_object_id%3A1005007669936975%7C_p_origin_prod%3A) - $25
+- [ ] Quest 2 PC Cable (https://www.aliexpress.com/item/1005008806421625.html?spm=a2g0o.productlist.main.1.431fbDLYbDLYrR&algo_pvid=7642bfb2-25e1-4050-b00e-e3cc71fd96d6&algo_exp_id=7642bfb2-25e1-4050-b00e-e3cc71fd96d6-0&pdp_ext_f=%7B%22order%22%3A%2221%22%2C%22eval%22%3A%221%22%2C%22fromPage%22%3A%22search%22%7D&pdp_npi=6%40dis%21AUD%215.91%213.55%21%21%2127.03%2116.22%21%402103212b17627459372332937ede5b%2112000046741094655%21sea%21AU%212946296420%21X%211%210%21n_tag%3A-29919%3Bd%3A6a443673%3Bm03_new_user%3A-29895&curPageLogUid=EZFtBGCSsZ1N&utparam-url=scene%3Asearch%7Cquery_from%3A%7Cx_object_id%3A1005008806421625%7C_p_origin_prod%3A) - $10
+- [ ] Better PC (https://mikepc.com.au/collections/big-sale-2025/products/antec-c5-snow-rtx-5070-gaming-pc) - ~$1,900
+
+# Room Stuff
+- [ ] Pegboard (https://www.aliexpress.com/item/1005008952194421.html?spm=a2g0o.cart.0.0.50c238daoyyEMx&mp=1&pdp_npi=5%40dis%21AUD%21AUD%2033.85%21AUD%2016.59%21%21AUD%2016.43%21%21%21%402101d9ef17627464623477664e887d%2112000047338985327%21ct%21AU%212946296420%21%214%210) - $16 - $20
+
+
+
+
+# Fashion
+- [ ] Nike Dunks (https://www.jd-sports.com.au/collection/nike-dunk/)
+
+# JoJo's Bizarre Adventure
+- [ ] JOJO Magazine 2023 WINTER (https://www.ebay.com.au/sch/i.html?_nkw=jojo+magazine) - $70
+- [ ] JOJO Magazine 2024 WINTER (https://www.ebay.com.au/sch/i.html?_nkw=jojo+magazine) - $70
+- [ ] JOJO MAGAZINE 2025 SUMMER (https://www.ebay.com.au/sch/i.html?_nkw=jojo+magazine) - $70
+- [ ] JoJo's Bizarre Adventure Part 9 Vols 1–6 (https://www.ebay.com.au/sch/i.html?_nkw=jojolands) - $9
+- [ ] JoJo's Bizarre Adventure: All Star Battle PS3 (https://www.ebay.com.au/itm/116831302212) - $18
+
+# Misc
+
+- [ ] Lint Remover (https://www.aliexpress.com/item/1005007374457590.html?spm=a2g0o.productlist.main.6.52fc7a4fZM2mUR&algo_pvid=483262bc-310f-4606-be05-62e4f1571455&algo_exp_id=483262bc-310f-4606-be05-62e4f1571455-5&pdp_ext_f=%7B%22order%22%3A%22337%22%2C%22eval%22%3A%221%22%2C%22fromPage%22%3A%22search%22%7D&pdp_npi=6%40dis%21AUD%2117.39%2117.39%21%21%2111.17%2111.17%21%402101d6fe17627547558925602e7aec%2112000040477017111%21sea%21AU%212946296420%21X%211%210%21n_tag%3A-29919%3Bd%3A6a443673%3Bm03_new_user%3A-29895&curPageLogUid=TTVsiFukcmyU&utparam-url=scene%3Asearch%7Cquery_from%3A%7Cx_object_id%3A1005007374457590%7C_p_origin_prod%3A) - $17
+
+
+
+
+</script>
+
+<script>
+/* ---------- Markdown parser and app state ---------- */
+function parseMarkdown(md){
+  const lines=md.split(/\r?\n/);
+  const items=[]; let category='Uncategorized';
+  for(const raw of lines){
+    const line=raw.trim();
+    if(/^#{1,6}\s+/.test(line)){category=line.replace(/^#{1,6}\s+/, '').trim();continue;}
+    if(/^[-*]\s+/.test(line)){
+      const m=line.match(/^[-*]\s+(?:\[(.| )\]\s+)?(.+?)(?:\((https?:[^\s)]+)\))?(?:\s*-\s*\$?(\d+(?:\.\d{1,2})?))?(?:\s*-\s*(.+))?$/);
+      if(m){ items.push({id:crypto.randomUUID(),category,title:(m[2]||'').trim(),url:m[3]||'',price:m[4]?Number(m[4]):null,notes:(m[5]||'').trim(),done:(m[1]||'').toLowerCase()==='x'}); }
+    }
+  }
+  return items;
+}
+const KEY='wishlist_state_v1';
+function loadState(){try{return JSON.parse(localStorage.getItem(KEY)||'{}');}catch{return{}}}
+function saveState(s){localStorage.setItem(KEY,JSON.stringify(s));}
+
+/* ---------- Twinkling star background ---------- */
+const starsCanvas = document.getElementById('stars');
+const sctx = starsCanvas.getContext('2d', { alpha: true });
+let stars = [];
+function resizeStars(){
+  starsCanvas.width = innerWidth;
+  starsCanvas.height = innerHeight;
+  const area = innerWidth * innerHeight;
+  const count = Math.round(area / 9000); // density
+  stars = new Array(count).fill(0).map(()=>({
+    x: Math.random()*innerWidth,
+    y: Math.random()*innerHeight,
+    r: Math.random()*1.3 + 0.3,
+    base: Math.random()*0.5 + 0.25,
+    spd: Math.random()*0.006 + 0.002,
+    phase: Math.random()*Math.PI*2
+  }));
+}
+addEventListener('resize', resizeStars); resizeStars();
+function drawStars(t){
+  sctx.clearRect(0,0,starsCanvas.width,starsCanvas.height);
+  for(const st of stars){
+    const a = st.base * (0.5 + 0.5*Math.sin(st.phase + t*st.spd));
+    sctx.globalAlpha = a;
+    sctx.beginPath();
+    sctx.arc(st.x, st.y, st.r, 0, Math.PI*2);
+    sctx.fillStyle = '#ffffff';
+    sctx.fill();
+  }
+  requestAnimationFrame(drawStars);
+}
+requestAnimationFrame(drawStars);
+
+/* ---------- Confetti FX (existing) ---------- */
+const fx=document.getElementById('fx');
+const ctx=fx.getContext('2d');
+function resizeFX(){ fx.width=innerWidth; fx.height=innerHeight; }
+addEventListener('resize', resizeFX); resizeFX();
+let confetti=[];
+const colors=['#ff1744','#ff9100','#ffee00','#00e676','#00b0ff','#d500f9','#ff4081','#69f0ae','#ffd600','#651fff'];
+function burst(x,y){
+  for(let i=0;i<120;i++){
+    const color=colors[Math.floor(Math.random()*colors.length)];
+    confetti.push({x,y,size:Math.random()*5+3,vx:(Math.random()-0.5)*7,vy:Math.random()*-7-3,g:0.2,life:130,color});
+  }
+}
+function tick(){
+  ctx.clearRect(0,0,fx.width,fx.height);
+  confetti=confetti.filter(p=>p.life>0);
+  for(const p of confetti){
+    p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.life--;
+    ctx.globalAlpha=Math.max(p.life/130,0.15);
+    ctx.fillStyle=p.color;
+    ctx.fillRect(p.x,p.y,p.size,p.size);
+  }
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+/* ---------- App UI rendering (existing) ---------- */
+const elList=document.getElementById('list');const elEmpty=document.getElementById('empty');
+const elQ=document.getElementById('q');const elSort=document.getElementById('sort');
+const elCat=document.getElementById('cat');const elTheme=document.getElementById('themeSel');
+const elPrint=document.getElementById('print');
+const mdEl=document.getElementById('wishlist-md');let BASE=parseMarkdown(mdEl.textContent.trim());let state=loadState();
+function categories(items){return[...new Set(items.map(i=>i.category))];}
+function smartScore(i){return(i.done?1000:0)+(i.price==null?100:0);}
+function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));}
+
+function render(){
+ let q=elQ.value.trim().toLowerCase();let cat=elCat.value;let sort=elSort.value;
+ let items=BASE.map(i=>({...i,done:state[i.id]?.done??i.done}));
+ if(q)items=items.filter(i=>(i.title+" "+(i.notes||'')+" "+i.category).toLowerCase().includes(q));
+ if(cat)items=items.filter(i=>i.category===cat);
+ switch(sort){case'name':items.sort((a,b)=>a.title.localeCompare(b.title));break;
+ case'price-asc':items.sort((a,b)=>(a.price??1e9)-(b.price??1e9));break;
+ case'price-desc':items.sort((a,b)=>(b.price??-1)-(a.price??-1));break;
+ default:items.sort((a,b)=>smartScore(a)-smartScore(b)||a.title.localeCompare(b.title));}
+ elList.innerHTML='';
+ for(const i of items){
+   const card=document.createElement('div');card.className='card';
+   let noteHtml='';
+   if(i.notes){if(i.title.toLowerCase().includes('google pixel')){noteHtml=`<div class="note">For installing GrapheneOS; see <a href="https://grapheneos.org/faq#recommended-devices" target="_blank">supported devices</a></div>`;}}
+   const bought=i.done;
+   const actionBtn=bought?`<button class="link buy undo" data-id="${i.id}">Undo</button>`:`<button class="link buy" data-id="${i.id}">Mark bought</button>`;
+   card.innerHTML=`<div class="card-body"><div class="title">${escapeHtml(i.title)} ${bought?'<span style="color:var(--ok);font-size:0.9em">(Bought)</span>':''}</div><div class="meta"><span>${escapeHtml(i.category)}</span>${i.price!=null?`<span>~ $${i.price}</span>`:''}</div>${noteHtml}<div class="actions">${i.url?`<a class="link" href="${i.url}" target="_blank">View</a>`:''}${actionBtn}</div></div>`;
+   elList.appendChild(card);
+ }
+ document.querySelectorAll('button[data-id]').forEach(btn=>{btn.onclick=e=>{
+   const id=e.currentTarget.getAttribute('data-id');
+   const prev=state[id]?.done;
+   state[id]={done:!prev}; saveState(state);
+   const r=e.currentTarget.getBoundingClientRect();
+   if(!prev)burst(r.left+r.width/2,r.top+r.height/2);
+   render();
+ };});
+ elEmpty.style.display=items.length?'none':'block';
+ const cats=categories(BASE);elCat.innerHTML='<option value="">All categories</option>'+cats.map(c=>`<option>${escapeHtml(c)}</option>`).join('');if(cat)elCat.value=cat;
+}
+const THEME_KEY='wishlist_theme_v1';
+function applyTheme(val){ if(!val || val==='default'){ document.documentElement.removeAttribute('data-theme'); } else { document.documentElement.setAttribute('data-theme', val); } localStorage.setItem(THEME_KEY, val||'default'); }
+const savedTheme = localStorage.getItem(THEME_KEY)||'default';
+elTheme.value = savedTheme; applyTheme(savedTheme);
+elTheme.addEventListener('change',()=>applyTheme(elTheme.value));
+elPrint.onclick=()=>window.print();
+[elQ,elSort,elCat].forEach(el=>el.addEventListener('input',render));
+render();
+
+/* ---------- Short cursor line trail with faster timed fade-out ---------- */
+const lineCanvas = document.getElementById('lineFX');
+const lctx = lineCanvas.getContext('2d');
+function resizeLine(){ lineCanvas.width = innerWidth; lineCanvas.height = innerHeight; }
+addEventListener('resize', resizeLine); resizeLine();
+
+const MAX_POINTS = 16;    // shorter line
+const MAX_AGE_MS = 1100;  // faster disappearance
+const LINE_WIDTH = 1.75;
+let trail = [];
+
+document.addEventListener('mousemove', e => {
+  const t = performance.now();
+  trail.push({x:e.clientX, y:e.clientY, t});
+  if (trail.length > MAX_POINTS) trail.shift();
+});
+
+function drawTrail(){
+  const now = performance.now();
+  const cutoff = now - MAX_AGE_MS;
+  trail = trail.filter(p => p.t >= cutoff);
+  lctx.clearRect(0,0,lineCanvas.width,lineCanvas.height);
+
+  if(trail.length >= 2){
+    for(let i=1;i<trail.length;i++){
+      const a=trail[i-1], b=trail[i];
+      const life = Math.max(0, Math.min(1, (b.t - cutoff) / MAX_AGE_MS));
+      lctx.strokeStyle=`rgba(255,255,255,${life})`;
+      lctx.lineWidth=LINE_WIDTH;
+      lctx.beginPath();
+      lctx.moveTo(a.x,a.y);
+      lctx.lineTo(b.x,b.y);
+      lctx.stroke();
+    }
+  }
+  requestAnimationFrame(drawTrail);
+}
+requestAnimationFrame(drawTrail);
+
+/* ---------- Lainchan radio controls ---------- */
+const radio = document.getElementById('lainRadio');
+const radioToggle = document.getElementById('radioToggle');
+const radioVol = document.getElementById('radioVol');
+radio.volume = parseFloat(radioVol.value || '0.35');
+
+radioToggle.addEventListener('click', async () => {
+  try{
+    if (radio.paused) {
+      await radio.play();
+      radioToggle.textContent = '⏸︎ Pause';
+    } else {
+      radio.pause();
+      radioToggle.textContent = '▶︎ Play';
+    }
+  }catch(err){
+    console.warn('Radio play error:', err);
+  }
+});
+radioVol.addEventListener('input', () => { radio.volume = parseFloat(radioVol.value||'0.35'); });
+</script>
+<elevenlabs-convai agent-id="agent_3701k9p0xdwafhntv2g1z3e9bb94"></elevenlabs-convai>
+<script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
+
+
+</body>
+</html>
